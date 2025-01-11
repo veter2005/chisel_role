@@ -1,0 +1,98 @@
+---
+
+- name: Ensure chisel group exist
+  group:
+    name: "{{ chisel_group }}"
+    system: yes
+    state: present
+
+- name: Ensure chisel user exist
+  user:
+    name: "{{ chisel_user }}"
+    group: "{{ chisel_group }}"
+    shell: /usr/sbin/nologin
+    system: true
+    createhome: false
+
+- block:
+    - name: Download chisel binary to local folder
+      become: false
+      get_url:
+        url: "{{ chisel_github_url }}"
+        dest: "/tmp/chisel_{{ chisel_version }}_linux_{{ go_arch }}.gz"
+        checksum: "sha256:{{ _chisel_checksum }}"
+        mode: '0644'
+      register: _download_binary
+      until: _download_binary is succeeded
+      retries: 5
+      delay: 2
+      delegate_to: localhost
+      check_mode: false
+      changed_when: false
+
+    - name: Unpack chisel binary
+      become: false
+      command:
+        cmd: "gunzip /tmp/chisel_{{ chisel_version }}_linux_{{ go_arch }}.gz"
+      delegate_to: localhost
+      check_mode: false
+      changed_when: false
+
+    - name: Propagate chisel-server binaries
+      copy:
+        src: "/tmp/chisel_{{ chisel_version }}_linux_{{ go_arch }}"
+        dest: "{{ chisel_bin_dir }}/chisel"
+        mode: 0755
+        owner: root
+        group: root
+      when:
+        - not ansible_check_mode
+        - chisel_server
+      notify: restart chisel-server
+
+    - name: Propagate chisel-client binaries
+      copy:
+        src: "/tmp/chisel_{{ chisel_version }}_linux_{{ go_arch }}"
+        dest: "{{ chisel_bin_dir }}/chisel"
+        mode: 0755
+        owner: root
+        group: root
+      when:
+        - not ansible_check_mode
+        - not chisel_server
+      notify: restart chisel-client
+
+    - name: Clear file on localhost
+      become: false
+      file:
+        path: "/tmp/chisel_{{ chisel_version }}_linux_{{ go_arch }}"
+        state: absent
+      delegate_to: localhost
+      check_mode: false
+      run_once: true
+      changed_when: false
+  when: chisel_binary_local_dir | length == 0
+
+- name: Propagate locally distributed chisel-server binary
+  copy:
+    src: "{{ chisel_binary_local_dir }}/chisel"
+    dest: "{{ chisel_bin_dir }}/chisel"
+    mode: 0755
+    owner: root
+    group: root
+  when:
+    - chisel_binary_local_dir | length > 0
+    - chisel_server
+  notify: restart chisel-server
+
+- name: Propagate locally distributed chisel-client binary
+  copy:
+    src: "{{ chisel_binary_local_dir }}/chisel"
+    dest: "{{ chisel_bin_dir }}/chisel"
+    mode: 0755
+    owner: root
+    group: root
+  when:
+    - chisel_binary_local_dir | length > 0
+    - not chisel_server
+  notify: restart chisel-client

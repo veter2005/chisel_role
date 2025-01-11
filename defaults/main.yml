@@ -1,0 +1,10 @@
+---
+
+chisel_server: false
+chisel_version: latest
+chisel_user: chisel
+chisel_group: chisel
+chisel_bin_dir: /usr/local/bin
+chisel_binary_local_dir: ""
+
+...

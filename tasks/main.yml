@@ -1,0 +1,42 @@
+---
+
+- name: Preflight
+  include_tasks:
+    file: preflight.yml
+    apply:
+      tags:
+        - chisel_preflight
+        - chisel_install
+  tags:
+    - chisel_preflight
+    - chisel_install
+
+- name: Install chisel
+  include_tasks:
+    file: install.yml
+    apply:
+      tags: chisel_install
+  tags: chisel_install
+
+- name: Configure chisel
+  include_tasks:
+    file: configure.yml
+    apply:
+      tags: chisel_configure
+  tags: chisel_configure
+
+- name: Start chisel-server service
+  ansible.builtin.systemd_service:
+    name: chisel-server
+    state: started
+  tags: chisel_run
+  when: chisel_server
+
+- name: Start chisel-client service
+  ansible.builtin.systemd_service:
+    name: chisel-client
+    state: started
+  tags: chisel_run
+  when: not chisel_server
+
+...

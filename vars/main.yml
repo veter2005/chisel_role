@@ -1,0 +1,14 @@
+---
+# vars file for chisel
+chisel_repo: jpillora/chisel
+chisel_github_url: "https://github.com/{{
+  chisel_repo }}/releases/download/v{{ chisel_version }}/chisel_{{
+  chisel_version}}_linux_{{go_arch }}.gz"
+
+go_arch: "{{ go_arch_map[ansible_architecture] | default('amd64') }}"
+go_arch_map:
+  i386: '386'
+  x86_64: 'amd64'
+  aarch64: 'arm64'
+  armv7l: 'armv7'
+  armv6l: 'armv6'

@@ -1,0 +1,21 @@
+[Unit]
+{% if chisel_server is true %}
+Description=Chisel server service
+{% else %}
+Description=Chisel client service
+{% endif %}
+After=network.target
+
+[Service]
+Type=simple
+Restart=always
+User={{ chisel_user }}
+Group={{ chisel_group }}
+ExecStart=/usr/local/bin/chisel \
+{% if chisel_server is true %}
+  server --port {{ chisel_server_port }} {{ chisel_target_ip }}
+{% else %}
+  client http://{{ chisel_server_ip }}:{{ chisel_server_port }} {{ chisel_client_ip }}:{{ chisel_client_port }}:{{ chisel_target_ip }}:{{ chisel_target_port }}
+{% endif %}
+[Install]
+WantedBy=multi-user.target

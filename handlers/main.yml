@@ -1,0 +1,17 @@
+---
+
+- name: restart chisel-client
+  ansible.builtin.systemd_service:
+    name: chisel-client
+    state: restarted
+    daemon_reload: true
+  listen: restart chisel-client
+
+- name: restart chisel-server
+  ansible.builtin.systemd_service:
+    name: chisel-server
+    state: restarted
+    daemon_reload: true
+  listen: restart chisel-server
+
+...

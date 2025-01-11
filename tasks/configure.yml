@@ -1,0 +1,37 @@
+---
+
+- block:
+    - name: Copy the systemd-service file
+      template:
+        src: chisel.service.j2
+        dest: /etc/systemd/system/chisel-server.service
+        owner: root
+        group: root
+      notify: restart chisel-server
+
+    - name: Enable the service
+      systemd:
+        daemon_reload: yes
+        name: chisel-server
+        enabled: yes
+      notify: restart chisel-server
+  when: chisel_server
+
+- block:
+    - name: Copy the systemd-service file
+      template:
+        src: chisel.service.j2
+        dest: /etc/systemd/system/chisel-client.service
+        owner: root
+        group: root
+      notify: restart chisel-client
+
+    - name: Enable the service
+      systemd:
+        daemon_reload: yes
+        name: chisel-client
+        enabled: yes
+      notify: restart chisel-client
+  when: not chisel_server
+
+...

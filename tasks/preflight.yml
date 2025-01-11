@@ -1,0 +1,44 @@
+---
+
+- block:
+    - name: Get latest release
+      uri:
+        url: "https://api.github.com/repos/{{ chisel_repo }}/releases/latest"
+        body_format: json
+        return_content: yes
+      register: __latest_release_version
+    - name: "Set chisel version to {{
+             __latest_release_version.json.tag_name[1:] }}"
+      set_fact:
+        chisel_version: "{{ __latest_release_version.json.tag_name[1:] }}"
+  when:
+    - chisel_version == "latest"
+    - chisel_binary_local_dir | length == 0
+  delegate_to: localhost
+  run_once: true
+  become: false
+
+- block:
+    - name: Get checksum list from github
+      set_fact:
+        _checksums: "{{ lookup('url', 'https://github.com/{{
+          chisel_repo }}/releases/download/v' ~ chisel_version ~ '/chisel_{{
+          chisel_version }}_checksums.txt', wantlist=True) | list }}"
+
+    - debug:
+        msg: "{{ _checksums | to_nice_yaml}}"
+
+    - name: "Get checksum for {{ go_arch }} architecture"
+      set_fact:
+        _chisel_checksum: "{{ item.split(' ')[0] }}"
+      when: "('chisel_' ~ chisel_version ~ '_linux_' ~ go_arch ~ '.gz') in item"
+      with_items: "{{ _checksums }}"
+
+  delegate_to: localhost
+  run_once: true
+  become: false
+  when: chisel_binary_local_dir | length == 0
+
+- debug:
+    msg: "{{ _chisel_checksum }}"
+...
